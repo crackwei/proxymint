@@ -1,0 +1,24 @@
+{
+    	"serverName": "stratum server"
+	"upstreamHost": "localhost"
+	"upstreamPort": 8333
+
+	"localPort": 8333
+
+	"username": "username"
+	"password": "password"
+
+	"redisHost": "localhost:6379"
+	"redisAuth": ""
+	"redisChanName": "shares"
+
+	"publicKeyByte": 30
+	"extraNonce2Size": 9
+
+	"testnet": true
+	"initTimeout": 30
+	"authTimeout": 30
+	"clientIdle": 1000
+
+	"logLevel": "INFO"
+}
