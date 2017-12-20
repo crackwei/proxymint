@@ -1,12 +1,11 @@
-package stratum
+package main
 
 import (
 	"encoding/json"
 	"errors"
+	"github.com/hashicorp/errwrap"
 	"log"
 	"math/big"
-
-	"github.com/hashicorp/errwrap"
 )
 
 type (
@@ -269,3 +268,7 @@ func (r ResponseGeneral) Type() ResponseType {
 	return General
 }
 
+func (uint256 Uint256) ToInteger() *big.Int {
+	x := big.NewInt(0)
+	return x.SetBytes(uint256[:])
+}
