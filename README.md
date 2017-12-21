@@ -11,6 +11,6 @@
 - dashboard
 
 RUN:
-- git clone git@github.com:BTCChina/mining-pool-proxy.git; git checkout newproxy; cd mining-pool-proxy
+- git clone git@github.com:dbuildb/proxymint.git; cd proxymint
 - make all
-- ./mining-pool-proxy
+- ./proxymint
