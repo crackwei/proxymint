@@ -1,0 +1,11 @@
+hash: 0efba22f7b6417b2f8bb84183beaabf73188bfdc57b881b0119812e8479bd2fa
+updated: 2017-12-21T15:09:06.765213779+08:00
+imports:
+- name: github.com/garyburd/redigo
+  version: 47dc60e71eed504e3ef8e77ee3c6fe720f3be57f
+  subpackages:
+  - internal
+  - redis
+- name: github.com/hashicorp/errwrap
+  version: 7554cd9344cec97297fa6649b055a8c98c2a1e55
+testImports: []

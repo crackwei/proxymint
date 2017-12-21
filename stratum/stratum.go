@@ -1,11 +1,12 @@
-package main
+package stratum
 
 import (
 	"encoding/json"
 	"errors"
-	"github.com/hashicorp/errwrap"
 	"log"
 	"math/big"
+
+	"github.com/hashicorp/errwrap"
 )
 
 type (
@@ -99,7 +100,7 @@ const (
 	Notify         ResponseType = "mining.notify"
 	SubscribeReply ResponseType = "mining.subscribe.reply"
 	Version        ResponseType = "client.get_version"
-	Difficulty     ResponseType = "mining.set_difficulty"
+	SetDifficulty  ResponseType = "mining.set_difficulty"
 	Extranonce     ResponseType = "mining.set_extranonce"
 	Reconnect      ResponseType = "client.reconnect"
 	General        ResponseType = "general"
@@ -246,9 +247,9 @@ func (r ResponseNotify) Type() ResponseType {
 func (r ResponseSetDifficulty) MarshalJSON() ([]byte, error) {
 	return marshalRequest(RawRPC{
 		ID:     nil,
-		Method: ResponseType(SetDifficulty),
+		Method: RequestType(SetDifficulty),
 	}, []interface{}{
-		ToHex(r.Target),
+		ToHex(r.difficulty),
 	})
 }
 

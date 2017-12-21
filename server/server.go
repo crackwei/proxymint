@@ -1,12 +1,17 @@
-package main
+package server
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"log"
 	"net"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/BTCChina/mining-pool-proxy/proxy"
+	"github.com/BTCChina/mining-pool-proxy/stratum"
 )
 
 type (
@@ -32,7 +37,7 @@ type (
 
 		ps   *ProxyServer
 		conn net.Conn
-		lrw  *LRW
+		lrw  *proxy.LRW
 	}
 )
 
@@ -76,11 +81,11 @@ func (s *ProxyServer) Handle(conn *net.TCPConn) error {
 		return err
 	}
 
-	client := proxyClient{
+	client := ProxyClient{
 		ID:   ClientID(atomic.AddUint64(&s.idCount, 1)),
 		ps:   s,
 		conn: conn,
-		lrw:  NewLRW(conn),
+		lrw:  proxy.NewLRW(conn),
 	}
 
 	return client.Serve()
@@ -124,12 +129,12 @@ func (c *ProxyClient) Serve() (err error) {
 	var noncePart1 stratum.Uint128
 
 	// Handle subscription
-	subscribe, err := c.lrw.WaitForType(Subscribe, time.Now().Add(InitTimeout))
+	subscribe, err := c.lrw.WaitForType(stratum.Subscribe, time.Now().Add(InitTimeout))
 	if err != nil {
 		return err
 	}
 
-	sub := subscribe.(RequestSubscribe)
+	sub := subscribe.(stratum.RequestSubscribe)
 	if len(sub.Params) == 2 {
 		c.ps.Subscribe(c)
 		defer c.ps.Unsubscribe(c)
@@ -143,7 +148,7 @@ func (c *ProxyClient) Serve() (err error) {
 	// Write in the client ID
 	binary.LittleEndian.PutUint64(noncePart1[8:], uint64(c.ID))
 
-	if err := c.lrw.WriteStratumTimed(ResponseSubscribeReply{
+	if err := c.lrw.WriteStratumTimed(stratum.ResponseSubscribeReply{
 		ID:         sub.ID,
 		Session:    "",
 		NoncePart1: noncePart1,
@@ -159,7 +164,7 @@ func (c *ProxyClient) Serve() (err error) {
 	defer c.ps.Unsubscribe(c)
 
 	// Channel for reading input
-	ChanRequest := make(chan Request, 64)
+	ChanRequest := make(chan stratum.Request, 64)
 	go func() error {
 		defer close(ChanRequest)
 
@@ -173,8 +178,36 @@ func (c *ProxyClient) Serve() (err error) {
 		}
 	}()
 
+	return nil
 }
 
 func (c *ProxyClient) Close() error {
 	return c.conn.Close()
+}
+
+// Config for the pool server.
+type Config struct {
+	Host string `json:"host"`
+
+	PProfHost string `json:"pprof_host"`
+
+	Testnet bool `json:"testnet"`
+}
+
+func LoadConfig() (cfg Config, err error) {
+	configPath := os.Getenv("CONFIG")
+	if configPath == "" {
+		configPath = "config.json"
+	}
+
+	file, err := os.Open(configPath)
+	if err != nil {
+		return cfg, err
+	}
+
+	if err := json.NewDecoder(file).Decode(&cfg); err != nil {
+		return cfg, err
+	}
+
+	return cfg, nil
 }

@@ -1,51 +1,24 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net"
-	"os"
 
 	"net/http"
 	_ "net/http/pprof"
+
+	"github.com/BTCChina/mining-pool-proxy/server"
 )
-
-// Config for the pool server.
-type Config struct {
-	Host string `json:"host"`
-
-	PProfHost string `json:"pprof_host"`
-
-	Testnet bool `json:"testnet"`
-}
-
-func loadConfig() (cfg Config, err error) {
-	configPath := os.Getenv("CONFIG")
-	if configPath == "" {
-		configPath = "config.json"
-	}
-
-	file, err := os.Open(configPath)
-	if err != nil {
-		return cfg, err
-	}
-
-	if err := json.NewDecoder(file).Decode(&cfg); err != nil {
-		return cfg, err
-	}
-
-	return cfg, nil
-}
 
 func main() {
 	log.SetFlags(log.Lshortfile | log.LstdFlags | log.Lmicroseconds)
 
-	cfg, err := loadConfig()
+	cfg, err := server.LoadConfig()
 	if err != nil {
 		log.Fatalln("Could not load configuration:", err)
 	}
 
-	server, err := NewProxy(cfg)
+	server, err := server.NewProxy(cfg)
 	if err != nil {
 		log.Fatalln("Could not start proxy server", err)
 	}

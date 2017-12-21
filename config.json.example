@@ -1,0 +1,21 @@
+{
+	"upstreamHost": "localhost",
+	"upstreamPort": 8333,
+
+	"host": "localhost:3333",
+
+	"username": "username",
+	"password": "password",
+
+	"publicKeyByte": 30,
+	"extraNonce2Size": 9,
+
+	"testnet": true,
+	"initTimeout": 30,
+	"authTimeout": 30,
+	"clientIdle": 1000,
+
+	"pprof_host": "localhost:3334",
+
+	"logLevel": "INFO"
+}

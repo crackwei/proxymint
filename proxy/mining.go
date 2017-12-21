@@ -1,20 +1,23 @@
-package main
+package proxy
 
 import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
-	"encoding/hex"
+	//"encoding/hex"
 	"errors"
 	"math/big"
 	"time"
+
+	"github.com/BTCChina/mining-pool-proxy/stratum"
 )
 
+// work
 type Work struct {
-	ResponseNotify
+	stratum.ResponseNotify
 
 	Height   int
-	Target   Uint256
+	Target   stratum.Uint256
 	RawBlock []byte
 	SWork    []byte
 	N        int
@@ -43,7 +46,7 @@ const (
 func (w *Work) Check(nTime uint32, noncePart1, noncePart2, solution []byte, shareTarget stratum.Uint256, dead bool) ShareStatus {
 	buffer := BuildBlockHeader(w.Version, w.HashPrevBlock[:], w.HashMerkleRoot[:], w.HashReserved[:], w.NTime, w.NBits, noncePart1, noncePart2)
 
-	result, hash := Validate(w.N, w.K, buffer.Bytes(), solution, shareTarget, w.Target)
+	result, _ := Validate(w.N, w.K, buffer.Bytes(), solution, shareTarget, w.Target)
 	if result == ShareBlock {
 		if dead {
 			return result
@@ -69,8 +72,8 @@ func init() {
 	POWLimit, _ = new(big.Int).SetString("0x00000000FFFF0000000000000000000000000000000000000000000000000000", 0)
 }
 
-func (d Difficulty) ToTarget() Uint256 {
-	var result Uint256
+func (d Difficulty) ToTarget() stratum.Uint256 {
+	var result stratum.Uint256
 	if d == 0 {
 		copy(result[:], POWLimit.Bytes())
 		return result
@@ -89,7 +92,7 @@ func (d Difficulty) ToTarget() Uint256 {
 	return result
 }
 
-func FromTarget(target Uint256) Difficulty {
+func FromTarget(target stratum.Uint256) Difficulty {
 	targ := target.ToInteger()
 	if targ.Cmp(new(big.Int)) == 0 {
 		// just return a vary large value
@@ -100,16 +103,16 @@ func FromTarget(target Uint256) Difficulty {
 	return Difficulty(res.Uint64())
 }
 
-func TargetCompare(a, b Uint256) int {
+func TargetCompare(a, b stratum.Uint256) int {
 	return a.ToInteger().Cmp(b.ToInteger())
 }
 
 // CompactToTarget converts a NDiff value to a Target.
-func CompactToTarget(x uint32) (Uint256, error) {
+func CompactToTarget(x uint32) (stratum.Uint256, error) {
 	x = reverseUint32(x)
 
 	// The top byte is the number of bytes in the final string
-	var result Uint256
+	var result stratum.Uint256
 	i := (x & 0xff000000) >> 24
 
 	if int(i) > len(result) {
@@ -139,37 +142,37 @@ func BuildBlockHeader(version uint32, hashPrevBlock, hashMerkleRoot, hashReserve
 
 // Validate checks POW validity of a header.
 func Validate(n, k int, headerNonce []byte, solution []byte, shareTarget, globalTarget stratum.Uint256) (ShareStatus, string) {
-	ok, err := equihash.Verify(n, k, headerNonce, solution)
-	if err != nil {
-		return ShareInvalid, ""
-	}
+	// ok, err := sha256.Verify(n, k, headerNonce, solution)
+	// if err != nil {
+	// 	return ShareInvalid, ""
+	// }
 
-	if !ok {
-		return ShareInvalid, ""
-	}
+	// if !ok {
+	// 	return ShareInvalid, ""
+	// }
 
-	// Double sha to check the target
-	hash := sha256.New()
-	_, _ = hash.Write(headerNonce)
-	_, _ = hash.Write([]byte{0xfd, 0x40, 0x05})
-	_, _ = hash.Write(solution)
+	// // Double sha to check the target
+	// hash := sha256.New()
+	// _, _ = hash.Write(headerNonce)
+	// _, _ = hash.Write([]byte{0xfd, 0x40, 0x05})
+	// _, _ = hash.Write(solution)
 
-	round1 := hash.Sum(nil)
-	round2 := sha256.Sum256(round1[:])
+	// round1 := hash.Sum(nil)
+	// round2 := sha256.Sum256(round1[:])
 
-	// Reverse the hash
-	for i, j := 0, len(round2)-1; i < j; i, j = i+1, j-1 {
-		round2[i], round2[j] = round2[j], round2[i]
-	}
+	// // Reverse the hash
+	// for i, j := 0, len(round2)-1; i < j; i, j = i+1, j-1 {
+	// 	round2[i], round2[j] = round2[j], round2[i]
+	// }
 
-	// Check against the global target
-	if TargetCompare(round2, globalTarget) <= 0 {
-		return ShareBlock, hex.EncodeToString(round2[:])
-	}
+	// // Check against the global target
+	// if TargetCompare(round2, globalTarget) <= 0 {
+	// 	return ShareBlock, hex.EncodeToString(round2[:])
+	// }
 
-	if TargetCompare(round2, shareTarget) > 1 {
-		return ShareInvalid, ""
-	}
+	// if TargetCompare(round2, shareTarget) > 1 {
+	// 	return ShareInvalid, ""
+	// }
 
 	return ShareOK, ""
 }

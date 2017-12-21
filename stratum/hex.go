@@ -1,4 +1,4 @@
-package main
+package stratum
 
 import (
 	"encoding/binary"
